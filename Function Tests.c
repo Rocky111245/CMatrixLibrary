@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "stdlib.h"
 #include "stdbool.h"
+#include <time.h>
 
 
 typedef struct
@@ -14,32 +15,33 @@ Matrix;
 
 
 Matrix Matrix_Create_Zero (int rows, int columns);
-Matrix Matrix_Create (int rows, int columns);
+Matrix Matrix_Create_Input (int rows, int columns);
 void Matrix_Free(Matrix* matrix) ;
 Matrix Matrix_Multiply( Matrix firstMatrix, Matrix secondMatrix);
 void Matrix_Display(Matrix matrix);
 Matrix *Matrix_Allocate(int rows, int columns);
 int Matrix_Index_Finder( int maxColumns, int desiredRow,int desiredColumn);
-float* Array_Scalar_Multiply(int end, float multiplier, float *array);
+float* Array_Scalar_Multiply(int length, float multiplier, float *array);
 float* Array_Add(int size,float *firstArray, float *secondArray);
+Matrix Matrix_Create_Random(int rows, int columns, int scale);
 
 
 int main(){
-    Matrix first= Matrix_Create(4,4);
-    Matrix second= Matrix_Create(4,4);
-
-    Matrix third=Matrix_Multiply(first,second);
-    Matrix_Display(third);
-    Matrix_Free(&first);
-    Matrix_Free(&second);
-    Matrix_Free(&third);
-
-
-
-
+    // Seed the random number generator
+    srand((unsigned) time(NULL));
+//    Matrix x=Matrix_Create_Random(3,3,10);
+//    Matrix y=Matrix_Create_Random(3,3,100);
+//    Matrix_Display(x);
+    Matrix x= Matrix_Create_Input(2,3);
+    Matrix y= Matrix_Create_Input(3,3);
+    Matrix z= Matrix_Multiply(x,y);
+    printf("\n");
+    Matrix_Display(z);
 }
 
-Matrix Matrix_Create (int rows, int columns){
+
+//creates a matrix with user input
+Matrix Matrix_Create_Input (int rows, int columns){
     Matrix M;
     M.row=rows;
     M.column=columns;
@@ -59,6 +61,7 @@ Matrix Matrix_Create (int rows, int columns){
 }
 
 
+//creates a 0 matrix
 Matrix Matrix_Create_Zero (int rows, int columns){
     Matrix M;
     M.row=rows;
@@ -72,6 +75,27 @@ Matrix Matrix_Create_Zero (int rows, int columns){
 }
 
 
+//creates a matrix with random number of elements, this matrix can also control the weight scaling
+Matrix Matrix_Create_Random(int rows, int columns, int scale) {
+    Matrix M;
+    M.row = rows;
+    M.column = columns;
+    M.data = (float*) malloc(rows * columns * sizeof(float));
+    if (M.data == NULL) {
+        exit(1); // Exit if memory allocation fails
+    }
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < columns; j++) {
+            int index = Matrix_Index_Finder(columns, i, j);
+            // Generate a random float between 1 and 10
+            M.data[index] = 1 + (rand() / (RAND_MAX / (scale - 1.0f)));
+        }
+    }
+    return M;
+}
+
+//frees memory
 void Matrix_Free(Matrix* matrix) {
     // Check if the data pointer is not NULL before freeing
     if (matrix->data != NULL) {
@@ -82,6 +106,7 @@ void Matrix_Free(Matrix* matrix) {
 }
 
 
+//This function displays a matrix
 void Matrix_Display(Matrix matrix) {
     int rows=matrix.row;
     int columns=matrix.column;
@@ -94,6 +119,7 @@ void Matrix_Display(Matrix matrix) {
 }
 
 
+//Multiplies two matrices, returns pointer to third matrix. A unique way to multiple matrices
 Matrix Matrix_Multiply( Matrix firstMatrix, Matrix secondMatrix){
     if(firstMatrix.column!=secondMatrix.row){
         printf("It is not mathematically possible to multiply two matrices where the number of column in the first matrix does not equal the number of rows in the second matrix");
@@ -106,7 +132,7 @@ Matrix Matrix_Multiply( Matrix firstMatrix, Matrix secondMatrix){
     int maxColumn=secondMatrix.column;
     int k;
     int n;
-    Matrix  Matrix_thirdMatrix= Matrix_Create_Zero(maxRow,maxColumn);
+    Matrix Matrix_thirdMatrix= Matrix_Create_Zero(maxRow,maxColumn);
     for(k=0;k<maxRow;k++) {
         n=0;
         float *sum = (float*) calloc(maxColumn,sizeof(float)); // Allocate memory for maxColumn floats
@@ -134,28 +160,22 @@ Matrix Matrix_Multiply( Matrix firstMatrix, Matrix secondMatrix){
 }
 
 
-
-
-
-
-
-
 //a mathematical way to finding the index
 int Matrix_Index_Finder(int maxColumns, int desiredRow, int desiredColumn) {
     return desiredRow * maxColumns + desiredColumn;
 }
 
 
-
-
-float* Array_Scalar_Multiply(int end, float multiplier, float *array){
-    float *newArray = (float *) malloc(end * sizeof(float)); // Correct allocation size
-    for (int i = 0; i < end; i++) {
+//multiplies a Matrix with a scalar
+float* Array_Scalar_Multiply(int length, float multiplier, float *array){
+    float *newArray = (float *) malloc(length * sizeof(float)); // Correct allocation size
+    for (int i = 0; i < length; i++) {
         newArray[i] = multiplier * array[i];
     }
     return newArray;
 }
 
+//adds two arrays with sizes that respect each other
 float* Array_Add(int size, float *firstArray, float *secondArray){
     float *thirdArray = (float *) malloc(size * sizeof(float)); // Correct allocation size
     for (int i = 0; i < size; i++) {
