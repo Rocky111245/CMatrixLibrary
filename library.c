@@ -1,8 +1,9 @@
 #include "library.h"
 #include <stdio.h>
 
+//Custom Linear Algebra Matrices Library
 
-//creates a matrix with user input
+//Creates a matrix with user input type struct
 Matrix Matrix_User_Input (int rows, int columns){
     Matrix M;
     M.row=rows;
@@ -23,7 +24,7 @@ Matrix Matrix_User_Input (int rows, int columns){
 }
 
 
-//creates a 0 matrix
+//Creates a Zero Matrix
 Matrix Matrix_Create_Zero (int rows, int columns){
     Matrix M;
     M.row=rows;
@@ -36,7 +37,8 @@ Matrix Matrix_Create_Zero (int rows, int columns){
     return M;
 }
 
-Matrix MatrixMaker_2DArray( int dataRows, int desiredRows,int desiredColumns,int stride, int data[][dataRows]){
+//Chops down a 2d array to struct format. Useful for separating training and test datasets.
+Matrix Matrix_Maker_2DArray(int maxColumns, int desiredRows, int desiredColumns, int stride, const float *data){
     Matrix M;
     M.row=desiredRows;
     M.column=desiredColumns;
@@ -48,7 +50,30 @@ Matrix MatrixMaker_2DArray( int dataRows, int desiredRows,int desiredColumns,int
     }
     for (int i=0;i<desiredRows;i++){
         for (int j=0+stride;j<desiredColumns+stride;j++){
-            M.data[index]=data[i][j];
+            int dataIndex= Matrix_Index_Finder(maxColumns,i,j);
+            M.data[index]=data[dataIndex];
+            index++;
+        }
+    }
+    return M;
+}
+
+
+//converts a 2d array to struct
+Matrix Matrix_to_Struct(int maxColumn,int size, const float *data){
+    Matrix M;
+    M.row=size;
+    M.column=maxColumn;
+    M.data=(float*) calloc(M.row*M.column,sizeof(float));
+    int index=0;
+    //This creates a contagious heap of rows||columns||pointer to data->data[0]
+    if (M.data == NULL) {
+        exit(1);
+    }
+    for (int i=0;i<M.row;i++){
+        for (int j=0;j<M.column;j++){
+            int dataIndex= Matrix_Index_Finder(maxColumn,i,j);
+            M.data[index]=data[dataIndex];
             index++;
         }
 
@@ -57,9 +82,7 @@ Matrix MatrixMaker_2DArray( int dataRows, int desiredRows,int desiredColumns,int
 }
 
 
-
-
-//creates a matrix with random number of elements, this matrix can also control the weight scaling
+//Creates a matrix with a random number of elements, this matrix can also control the weight scaling
 Matrix Matrix_Create_Random(int rows, int columns, int scale) {
     Matrix M;
     M.row = rows;
@@ -79,9 +102,10 @@ Matrix Matrix_Create_Random(int rows, int columns, int scale) {
     return M;
 }
 
+//Transposes the matrix
 void Matrix_Transpose(Matrix *final,Matrix original){
-    int originalMatrixIndex=0;
-    int finalMatrixIndex=0;
+    int originalMatrixIndex;
+    int finalMatrixIndex;
     int i;
     int j;
     for (j=0;j<original.row;j++) {
@@ -93,7 +117,7 @@ void Matrix_Transpose(Matrix *final,Matrix original){
     }
 }
 
-//frees memory
+//Frees memory
 void Matrix_Free(Matrix* matrix) {
     // Check if the data pointer is not NULL before freeing
     if (matrix->data != NULL) {
@@ -114,9 +138,10 @@ void Matrix_Display(Matrix matrix) {
         }
         printf("\n");
     }
+    printf("\n");
 }
 
-
+//Adds two struct matrices
 void Matrix_Add(Matrix *result, Matrix matrix1, Matrix matrix2) {
     // Ensure both matrices have the same dimensions
     if (matrix1.row != matrix2.row || matrix1.column != matrix2.column) {
@@ -133,8 +158,25 @@ void Matrix_Add(Matrix *result, Matrix matrix1, Matrix matrix2) {
     }
 }
 
+//Subtracts two struct matrices
+void Matrix_Subtract(Matrix *result, Matrix matrix1, Matrix matrix2) {
+    // Ensure both matrices have the same dimensions
+    if (matrix1.row != matrix2.row || matrix1.column != matrix2.column) {
+        printf("Error: Matrices dimensions do not match.\n");
+        exit(1);
+    }
 
-//Multiplies two matrices, returns pointer to third matrix. A unique way to multiple matrices
+    // Assuming 'result' matrix is pre-allocated and has the same dimensions as 'matrix1' and 'matrix2'
+    for (int i = 0; i < matrix1.row; i++) {
+        for (int j = 0; j < matrix1.column; j++) {
+            int index = Matrix_Index_Finder(matrix1.column, i, j);
+            result->data[index] = matrix1.data[index] - matrix2.data[index];
+        }
+    }
+}
+
+
+//Multiplies two matrices, returns pointer to third matrix.
 void Matrix_Multiply(Matrix *finalMatrix, Matrix firstMatrix, Matrix secondMatrix){
     int indexFirstMatrix;
     int indexSecondMatrix;
@@ -161,20 +203,15 @@ void Matrix_Multiply(Matrix *finalMatrix, Matrix firstMatrix, Matrix secondMatri
 }
 
 
-//a mathematical way to finding the index
+//A mathematical way of finding the index
 int Matrix_Index_Finder(int maxColumns, int desiredRow, int desiredColumn) {
     return desiredRow * maxColumns + desiredColumn;
 }
 
 
 
-
-
-
-
-
-//multiplies a Matrix with a scalar
-float* Array_Scalar_Multiply(int length, float multiplier, float *array){
+//Multiplies a Matrix with a scalar
+float* Array_Scalar_Multiply(int length, float multiplier, const float *array){
     float *newArray = (float *) malloc(length * sizeof(float)); // Correct allocation size
     for (int i = 0; i < length; i++) {
         newArray[i] = multiplier * array[i];
@@ -182,8 +219,8 @@ float* Array_Scalar_Multiply(int length, float multiplier, float *array){
     return newArray;
 }
 
-//adds two arrays with sizes that respect each other
-float* Array_Add(int size, float *firstArray, float *secondArray){
+//Adds two arrays with sizes that respect each other
+float* Array_Add(int size, const float *firstArray, const float *secondArray){
     float *thirdArray = (float *) malloc(size * sizeof(float)); // Correct allocation size
     for (int i = 0; i < size; i++) {
         thirdArray[i] = firstArray[i] + secondArray[i];
